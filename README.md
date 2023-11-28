@@ -1,3 +1,6 @@
 # pgpy
- Particle-grid routines using sph. The package offers two key contributions: particle field __interpolation__ and __deposition__ and __cosmic web classification__.\ 
- Illustrative examples can be found in the __documentation__ folder.
+ Particle-grid routines using sph. The package offers three key contributions: 
+ - particle field __interpolation__
+ - particle field __deposition__
+ - __cosmic web classification__
+ Illustrative examples can be found in the `documentation` folder.
