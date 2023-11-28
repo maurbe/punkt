@@ -6,28 +6,21 @@ from scipy.spatial import cKDTree
 class sph_interpolator():
 	
 	def __init__(self,
+				 particle_positions,
 				 particle_masses,
 				 boxsize,
-				 number_of_nn,
-				):
+				 number_of_nn
+				 ):
 		
 		self.pmasses = particle_masses
-		self.boxsize = boxsize
 		self.nn      = number_of_nn
-	
+		dim = particle_positions.shape[-1]
+
 		# compute relevant quantities for particles
-		# the particle density must always be computed in 3d
-		# print('Init: \t computing 3d hsm and ρ')
-	
-	
-	def setup(self, dim, pos=None):
-		# if we want to do a 2d projection -> recompute the kernel sizes for particles
-		# but the density must be kept 3d
-		
-		self.hsm, nn_dists, nn_inds, self.tree = compute_hsm(pos, self.nn, self.boxsize)
+		print(f'Init: \t computing {dim}d hsm and ρ')
+		self.hsm, nn_dists, nn_inds, self.tree = compute_hsm(particle_positions, self.nn, boxsize)
 		self.rho = self._compute_density(dim=dim, hsm=self.hsm, nn_dists=nn_dists, nn_inds=nn_inds)		
-		return self
-	
+
 	
 	def _compute_density(self, dim, hsm, nn_dists, nn_inds):
 		
