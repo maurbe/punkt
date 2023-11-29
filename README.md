@@ -12,4 +12,5 @@
  
  #### Cosmic web classification
 Cosmic web classification using the `T-web` algorithm
+![alt text for screen readers](./documentation/plots/cosmic_web.png "")
 
