@@ -7,7 +7,7 @@
  ![alt text for screen readers](./documentation/plots/interpolation_2d.png "")
  
  #### Deposition
- Deposition of particle quantities onto equidistant (2d and 3d) grids using `cic`, `isotropic` and `anisotropic` quintic kernels
+ Deposition of particle quantities onto equidistant (2d and 3d) grids using (adaptive) `cic`, `isotropic` and `anisotropic` quintic kernels
  ![alt text for screen readers](./documentation/plots/deposition_comparison.png "")
  
  #### Cosmic web classification
