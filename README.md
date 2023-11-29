@@ -11,5 +11,5 @@
  ![alt text for screen readers](./documentation/plots/deposition_comparison.png "")
  
  #### Cosmic web classification
-Cosmic web classification using the T-web algorithm
+Cosmic web classification using the `T-web` algorithm
 
