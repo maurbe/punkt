@@ -1,7 +1,8 @@
 # pgpy
  Particle-grid routines using sph. The package offers three key contributions: 
  
- #### particle field __interpolation__
+ #### Interpolation
+ Interpolation of particle fields to arbitrary coordinates
  ![alt text for screen readers](./documentation/plots/interpolation_2d.png "")
  
  #### particle field __deposition__
