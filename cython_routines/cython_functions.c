@@ -2212,14 +2212,6 @@ static CYTHON_INLINE PyObject *__Pyx_PyObject_GetItem(PyObject *obj, PyObject *k
 #define __Pyx_BufPtrCContig4d(type, buf, i0, s0, i1, s1, i2, s2, i3, s3) ((type)((char*)buf + i0 * s0 + i1 * s1 + i2 * s2) + i3)
 /* PyIntBinop.proto */
 #if !CYTHON_COMPILING_IN_PYPY
-static PyObject* __Pyx_PyInt_MultiplyCObj(PyObject *op1, PyObject *op2, long intval, int inplace, int zerodivision_check);
-#else
-#define __Pyx_PyInt_MultiplyCObj(op1, op2, intval, inplace, zerodivision_check)\
-    (inplace ? PyNumber_InPlaceMultiply(op1, op2) : PyNumber_Multiply(op1, op2))
-#endif
-
-/* PyIntBinop.proto */
-#if !CYTHON_COMPILING_IN_PYPY
 static PyObject* __Pyx_PyInt_AddObjC(PyObject *op1, PyObject *op2, long intval, int inplace, int zerodivision_check);
 #else
 #define __Pyx_PyInt_AddObjC(op1, op2, intval, inplace, zerodivision_check)\
@@ -6393,7 +6385,7 @@ static PyObject *__pyx_pf_16cython_functions_6anisotropic_kernel_deposition_2d(C
  * 		# they are the same in every frame!
  * 		hmat_eigvecs_norm = hmat_eigvecs[n]             # <<<<<<<<<<<<<<
  * 		hmat_eigvals_norm = _divide_vector_nd_by_scalar(hmat_eigvals[n], cellSize)
- * 		krs				  = _extract_max_value_1d(hmat_eigvals_norm) * 2
+ * 		krs				  = _extract_max_value_1d(hmat_eigvals_norm) * 3 # 2 kernel has compact support until 3h!
  */
     __pyx_t_2 = __Pyx_GetItemInt(((PyObject *)__pyx_v_hmat_eigvecs), __pyx_v_n, int, 1, __Pyx_PyInt_From_int, 0, 0, 0); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 144, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_2);
@@ -6404,7 +6396,7 @@ static PyObject *__pyx_pf_16cython_functions_6anisotropic_kernel_deposition_2d(C
  * 		# they are the same in every frame!
  * 		hmat_eigvecs_norm = hmat_eigvecs[n]
  * 		hmat_eigvals_norm = _divide_vector_nd_by_scalar(hmat_eigvals[n], cellSize)             # <<<<<<<<<<<<<<
- * 		krs				  = _extract_max_value_1d(hmat_eigvals_norm) * 2
+ * 		krs				  = _extract_max_value_1d(hmat_eigvals_norm) * 3 # 2 kernel has compact support until 3h!
  * 
  */
     __Pyx_GetModuleGlobalName(__pyx_t_1, __pyx_n_s_divide_vector_nd_by_scalar); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 145, __pyx_L1_error)
@@ -6443,7 +6435,7 @@ static PyObject *__pyx_pf_16cython_functions_6anisotropic_kernel_deposition_2d(C
     /* "cython_functions.pyx":146
  * 		hmat_eigvecs_norm = hmat_eigvecs[n]
  * 		hmat_eigvals_norm = _divide_vector_nd_by_scalar(hmat_eigvals[n], cellSize)
- * 		krs				  = _extract_max_value_1d(hmat_eigvals_norm) * 2             # <<<<<<<<<<<<<<
+ * 		krs				  = _extract_max_value_1d(hmat_eigvals_norm) * 3 # 2 kernel has compact support until 3h!             # <<<<<<<<<<<<<<
  * 
  * 		xpos = pos[n, 0] / cellSize
  */
@@ -6471,7 +6463,7 @@ static PyObject *__pyx_pf_16cython_functions_6anisotropic_kernel_deposition_2d(C
       __Pyx_GOTREF(__pyx_t_2);
       __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
     }
-    __pyx_t_1 = __Pyx_PyInt_MultiplyObjC(__pyx_t_2, __pyx_int_2, 2, 0, 0); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 146, __pyx_L1_error)
+    __pyx_t_1 = __Pyx_PyInt_MultiplyObjC(__pyx_t_2, __pyx_int_3, 3, 0, 0); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 146, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_1);
     __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
     __pyx_t_12 = __pyx_PyFloat_AsFloat(__pyx_t_1); if (unlikely((__pyx_t_12 == ((npy_float32)-1)) && PyErr_Occurred())) __PYX_ERR(0, 146, __pyx_L1_error)
@@ -6479,7 +6471,7 @@ static PyObject *__pyx_pf_16cython_functions_6anisotropic_kernel_deposition_2d(C
     __pyx_v_krs = __pyx_t_12;
 
     /* "cython_functions.pyx":148
- * 		krs				  = _extract_max_value_1d(hmat_eigvals_norm) * 2
+ * 		krs				  = _extract_max_value_1d(hmat_eigvals_norm) * 3 # 2 kernel has compact support until 3h!
  * 
  * 		xpos = pos[n, 0] / cellSize             # <<<<<<<<<<<<<<
  * 		ypos = pos[n, 1] / cellSize
@@ -7890,7 +7882,7 @@ static PyObject *__pyx_pf_16cython_functions_8anisotropic_kernel_deposition_3d(C
  * 		# they are the same in every frame!
  * 		hmat_eigvecs_norm = hmat_eigvecs[n]             # <<<<<<<<<<<<<<
  * 		hmat_eigvals_norm = _divide_vector_nd_by_scalar(hmat_eigvals[n], cellSize)
- * 		krs				  = _extract_max_value_1d(hmat_eigvals_norm) * 2
+ * 		krs				  = _extract_max_value_1d(hmat_eigvals_norm) * 3 # 2 kernel has compact support until 3h!
  */
     __pyx_t_2 = __Pyx_GetItemInt(((PyObject *)__pyx_v_hmat_eigvecs), __pyx_v_n, int, 1, __Pyx_PyInt_From_int, 0, 0, 0); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 234, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_2);
@@ -7901,7 +7893,7 @@ static PyObject *__pyx_pf_16cython_functions_8anisotropic_kernel_deposition_3d(C
  * 		# they are the same in every frame!
  * 		hmat_eigvecs_norm = hmat_eigvecs[n]
  * 		hmat_eigvals_norm = _divide_vector_nd_by_scalar(hmat_eigvals[n], cellSize)             # <<<<<<<<<<<<<<
- * 		krs				  = _extract_max_value_1d(hmat_eigvals_norm) * 2
+ * 		krs				  = _extract_max_value_1d(hmat_eigvals_norm) * 3 # 2 kernel has compact support until 3h!
  * 
  */
     __Pyx_GetModuleGlobalName(__pyx_t_3, __pyx_n_s_divide_vector_nd_by_scalar); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 235, __pyx_L1_error)
@@ -7940,7 +7932,7 @@ static PyObject *__pyx_pf_16cython_functions_8anisotropic_kernel_deposition_3d(C
     /* "cython_functions.pyx":236
  * 		hmat_eigvecs_norm = hmat_eigvecs[n]
  * 		hmat_eigvals_norm = _divide_vector_nd_by_scalar(hmat_eigvals[n], cellSize)
- * 		krs				  = _extract_max_value_1d(hmat_eigvals_norm) * 2             # <<<<<<<<<<<<<<
+ * 		krs				  = _extract_max_value_1d(hmat_eigvals_norm) * 3 # 2 kernel has compact support until 3h!             # <<<<<<<<<<<<<<
  * 
  * 		xpos = pos[n, 0] / cellSize
  */
@@ -7968,7 +7960,7 @@ static PyObject *__pyx_pf_16cython_functions_8anisotropic_kernel_deposition_3d(C
       __Pyx_GOTREF(__pyx_t_2);
       __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
     }
-    __pyx_t_3 = __Pyx_PyInt_MultiplyObjC(__pyx_t_2, __pyx_int_2, 2, 0, 0); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 236, __pyx_L1_error)
+    __pyx_t_3 = __Pyx_PyInt_MultiplyObjC(__pyx_t_2, __pyx_int_3, 3, 0, 0); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 236, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_3);
     __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
     __pyx_t_13 = __pyx_PyFloat_AsFloat(__pyx_t_3); if (unlikely((__pyx_t_13 == ((npy_float32)-1)) && PyErr_Occurred())) __PYX_ERR(0, 236, __pyx_L1_error)
@@ -7976,7 +7968,7 @@ static PyObject *__pyx_pf_16cython_functions_8anisotropic_kernel_deposition_3d(C
     __pyx_v_krs = __pyx_t_13;
 
     /* "cython_functions.pyx":238
- * 		krs				  = _extract_max_value_1d(hmat_eigvals_norm) * 2
+ * 		krs				  = _extract_max_value_1d(hmat_eigvals_norm) * 3 # 2 kernel has compact support until 3h!
  * 
  * 		xpos = pos[n, 0] / cellSize             # <<<<<<<<<<<<<<
  * 		ypos = pos[n, 1] / cellSize
@@ -10091,7 +10083,7 @@ static PyObject *__pyx_pf_16cython_functions_14isotropic_kernel_deposition_2d(CY
  * 
  * 		# normalize length scales
  * 		hsn  = hsm[n] / cellSize             # <<<<<<<<<<<<<<
- * 		krs  = 2 * hsn
+ * 		krs  = hsn * 3 # 2 kernel has compact support until 3h!
  * 
  */
     __pyx_t_9 = __pyx_v_n;
@@ -10108,18 +10100,18 @@ static PyObject *__pyx_pf_16cython_functions_14isotropic_kernel_deposition_2d(CY
     /* "cython_functions.pyx":360
  * 		# normalize length scales
  * 		hsn  = hsm[n] / cellSize
- * 		krs  = 2 * hsn             # <<<<<<<<<<<<<<
+ * 		krs  = hsn * 3 # 2 kernel has compact support until 3h!             # <<<<<<<<<<<<<<
  * 
  * 		xpos = pos[n, 0] / cellSize
  */
-    __pyx_t_4 = __Pyx_PyInt_MultiplyCObj(__pyx_int_2, __pyx_v_hsn, 2, 0, 0); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 360, __pyx_L1_error)
+    __pyx_t_4 = __Pyx_PyInt_MultiplyObjC(__pyx_v_hsn, __pyx_int_3, 3, 0, 0); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 360, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_4);
     __pyx_t_11 = __pyx_PyFloat_AsFloat(__pyx_t_4); if (unlikely((__pyx_t_11 == ((npy_float32)-1)) && PyErr_Occurred())) __PYX_ERR(0, 360, __pyx_L1_error)
     __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
     __pyx_v_krs = __pyx_t_11;
 
     /* "cython_functions.pyx":362
- * 		krs  = 2 * hsn
+ * 		krs  = hsn * 3 # 2 kernel has compact support until 3h!
  * 
  * 		xpos = pos[n, 0] / cellSize             # <<<<<<<<<<<<<<
  * 		ypos = pos[n, 1] / cellSize
@@ -11373,7 +11365,7 @@ static PyObject *__pyx_pf_16cython_functions_16isotropic_kernel_deposition_3d(CY
  * 
  * 		# normalize length scales
  * 		hsn  = hsm[n] / cellSize             # <<<<<<<<<<<<<<
- * 		krs  = 2 * hsn
+ * 		krs  = hsn * 3 # 2 kernel has compact support until 3h!
  * 
  */
     __pyx_t_10 = __pyx_v_n;
@@ -11390,18 +11382,18 @@ static PyObject *__pyx_pf_16cython_functions_16isotropic_kernel_deposition_3d(CY
     /* "cython_functions.pyx":444
  * 		# normalize length scales
  * 		hsn  = hsm[n] / cellSize
- * 		krs  = 2 * hsn             # <<<<<<<<<<<<<<
+ * 		krs  = hsn * 3 # 2 kernel has compact support until 3h!             # <<<<<<<<<<<<<<
  * 
  * 		xpos = pos[n, 0] / cellSize
  */
-    __pyx_t_4 = __Pyx_PyInt_MultiplyCObj(__pyx_int_2, __pyx_v_hsn, 2, 0, 0); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 444, __pyx_L1_error)
+    __pyx_t_4 = __Pyx_PyInt_MultiplyObjC(__pyx_v_hsn, __pyx_int_3, 3, 0, 0); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 444, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_4);
     __pyx_t_12 = __pyx_PyFloat_AsFloat(__pyx_t_4); if (unlikely((__pyx_t_12 == ((npy_float32)-1)) && PyErr_Occurred())) __PYX_ERR(0, 444, __pyx_L1_error)
     __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
     __pyx_v_krs = __pyx_t_12;
 
     /* "cython_functions.pyx":446
- * 		krs  = 2 * hsn
+ * 		krs  = hsn * 3 # 2 kernel has compact support until 3h!
  * 
  * 		xpos = pos[n, 0] / cellSize             # <<<<<<<<<<<<<<
  * 		ypos = pos[n, 1] / cellSize
@@ -21078,153 +21070,6 @@ static PyObject *__Pyx_PyObject_GetItem(PyObject *obj, PyObject *key) {
         return __Pyx_PyObject_GetIndex(obj, key);
     }
     return __Pyx_PyObject_GetItem_Slow(obj, key);
-}
-#endif
-
-/* PyIntBinop */
-  #if !CYTHON_COMPILING_IN_PYPY
-static PyObject* __Pyx_PyInt_MultiplyCObj(PyObject *op1, PyObject *op2, long intval, int inplace, int zerodivision_check) {
-    CYTHON_MAYBE_UNUSED_VAR(intval);
-    CYTHON_MAYBE_UNUSED_VAR(inplace);
-    CYTHON_UNUSED_VAR(zerodivision_check);
-    #if PY_MAJOR_VERSION < 3
-    if (likely(PyInt_CheckExact(op2))) {
-        const long a = intval;
-        long b = PyInt_AS_LONG(op2);
-        
-#ifdef HAVE_LONG_LONG
-            if (sizeof(PY_LONG_LONG) > sizeof(long)) {
-                PY_LONG_LONG result = (PY_LONG_LONG)a * (PY_LONG_LONG)b;
-                return (result >= LONG_MIN && result <= LONG_MAX) ?
-                    PyInt_FromLong((long)result) : PyLong_FromLongLong(result);
-            }
-#endif
-#if CYTHON_USE_TYPE_SLOTS
-            return PyInt_Type.tp_as_number->nb_multiply(op1, op2);
-#else
-            return PyNumber_Multiply(op1, op2);
-#endif
-    }
-    #endif
-    #if CYTHON_USE_PYLONG_INTERNALS
-    if (likely(PyLong_CheckExact(op2))) {
-        const long a = intval;
-        long b, x;
-#ifdef HAVE_LONG_LONG
-        const PY_LONG_LONG lla = intval;
-        PY_LONG_LONG llb, llx;
-#endif
-        if (unlikely(__Pyx_PyLong_IsZero(op2))) {
-            return __Pyx_NewRef(op2);
-        }
-        if (likely(__Pyx_PyLong_IsCompact(op2))) {
-            b = __Pyx_PyLong_CompactValue(op2);
-        } else {
-            const digit* digits = __Pyx_PyLong_Digits(op2);
-            const Py_ssize_t size = __Pyx_PyLong_SignedDigitCount(op2);
-            switch (size) {
-                case -2:
-                    if (8 * sizeof(long) - 1 > 2 * PyLong_SHIFT+30) {
-                        b = -(long) (((((unsigned long)digits[1]) << PyLong_SHIFT) | (unsigned long)digits[0]));
-                        break;
-                    #ifdef HAVE_LONG_LONG
-                    } else if (8 * sizeof(PY_LONG_LONG) - 1 > 2 * PyLong_SHIFT+30) {
-                        llb = -(PY_LONG_LONG) (((((unsigned PY_LONG_LONG)digits[1]) << PyLong_SHIFT) | (unsigned PY_LONG_LONG)digits[0]));
-                        goto long_long;
-                    #endif
-                    }
-                    CYTHON_FALLTHROUGH;
-                case 2:
-                    if (8 * sizeof(long) - 1 > 2 * PyLong_SHIFT+30) {
-                        b = (long) (((((unsigned long)digits[1]) << PyLong_SHIFT) | (unsigned long)digits[0]));
-                        break;
-                    #ifdef HAVE_LONG_LONG
-                    } else if (8 * sizeof(PY_LONG_LONG) - 1 > 2 * PyLong_SHIFT+30) {
-                        llb = (PY_LONG_LONG) (((((unsigned PY_LONG_LONG)digits[1]) << PyLong_SHIFT) | (unsigned PY_LONG_LONG)digits[0]));
-                        goto long_long;
-                    #endif
-                    }
-                    CYTHON_FALLTHROUGH;
-                case -3:
-                    if (8 * sizeof(long) - 1 > 3 * PyLong_SHIFT+30) {
-                        b = -(long) (((((((unsigned long)digits[2]) << PyLong_SHIFT) | (unsigned long)digits[1]) << PyLong_SHIFT) | (unsigned long)digits[0]));
-                        break;
-                    #ifdef HAVE_LONG_LONG
-                    } else if (8 * sizeof(PY_LONG_LONG) - 1 > 3 * PyLong_SHIFT+30) {
-                        llb = -(PY_LONG_LONG) (((((((unsigned PY_LONG_LONG)digits[2]) << PyLong_SHIFT) | (unsigned PY_LONG_LONG)digits[1]) << PyLong_SHIFT) | (unsigned PY_LONG_LONG)digits[0]));
-                        goto long_long;
-                    #endif
-                    }
-                    CYTHON_FALLTHROUGH;
-                case 3:
-                    if (8 * sizeof(long) - 1 > 3 * PyLong_SHIFT+30) {
-                        b = (long) (((((((unsigned long)digits[2]) << PyLong_SHIFT) | (unsigned long)digits[1]) << PyLong_SHIFT) | (unsigned long)digits[0]));
-                        break;
-                    #ifdef HAVE_LONG_LONG
-                    } else if (8 * sizeof(PY_LONG_LONG) - 1 > 3 * PyLong_SHIFT+30) {
-                        llb = (PY_LONG_LONG) (((((((unsigned PY_LONG_LONG)digits[2]) << PyLong_SHIFT) | (unsigned PY_LONG_LONG)digits[1]) << PyLong_SHIFT) | (unsigned PY_LONG_LONG)digits[0]));
-                        goto long_long;
-                    #endif
-                    }
-                    CYTHON_FALLTHROUGH;
-                case -4:
-                    if (8 * sizeof(long) - 1 > 4 * PyLong_SHIFT+30) {
-                        b = -(long) (((((((((unsigned long)digits[3]) << PyLong_SHIFT) | (unsigned long)digits[2]) << PyLong_SHIFT) | (unsigned long)digits[1]) << PyLong_SHIFT) | (unsigned long)digits[0]));
-                        break;
-                    #ifdef HAVE_LONG_LONG
-                    } else if (8 * sizeof(PY_LONG_LONG) - 1 > 4 * PyLong_SHIFT+30) {
-                        llb = -(PY_LONG_LONG) (((((((((unsigned PY_LONG_LONG)digits[3]) << PyLong_SHIFT) | (unsigned PY_LONG_LONG)digits[2]) << PyLong_SHIFT) | (unsigned PY_LONG_LONG)digits[1]) << PyLong_SHIFT) | (unsigned PY_LONG_LONG)digits[0]));
-                        goto long_long;
-                    #endif
-                    }
-                    CYTHON_FALLTHROUGH;
-                case 4:
-                    if (8 * sizeof(long) - 1 > 4 * PyLong_SHIFT+30) {
-                        b = (long) (((((((((unsigned long)digits[3]) << PyLong_SHIFT) | (unsigned long)digits[2]) << PyLong_SHIFT) | (unsigned long)digits[1]) << PyLong_SHIFT) | (unsigned long)digits[0]));
-                        break;
-                    #ifdef HAVE_LONG_LONG
-                    } else if (8 * sizeof(PY_LONG_LONG) - 1 > 4 * PyLong_SHIFT+30) {
-                        llb = (PY_LONG_LONG) (((((((((unsigned PY_LONG_LONG)digits[3]) << PyLong_SHIFT) | (unsigned PY_LONG_LONG)digits[2]) << PyLong_SHIFT) | (unsigned PY_LONG_LONG)digits[1]) << PyLong_SHIFT) | (unsigned PY_LONG_LONG)digits[0]));
-                        goto long_long;
-                    #endif
-                    }
-                    CYTHON_FALLTHROUGH;
-                default: return PyLong_Type.tp_as_number->nb_multiply(op1, op2);
-            }
-        }
-                CYTHON_UNUSED_VAR(a);
-                CYTHON_UNUSED_VAR(b);
-                #ifdef HAVE_LONG_LONG
-                llb = b;
-                goto long_long;
-                #else
-                return PyLong_Type.tp_as_number->nb_multiply(op1, op2);
-                #endif
-            return PyLong_FromLong(x);
-#ifdef HAVE_LONG_LONG
-        long_long:
-                llx = lla * llb;
-            return PyLong_FromLongLong(llx);
-#endif
-        
-        
-    }
-    #endif
-    if (PyFloat_CheckExact(op2)) {
-        const long a = intval;
-#if CYTHON_COMPILING_IN_LIMITED_API
-        double b = __pyx_PyFloat_AsDouble(op2);
-#else
-        double b = PyFloat_AS_DOUBLE(op2);
-#endif
-            double result;
-            
-            PyFPE_START_PROTECT("multiply", return NULL)
-            result = ((double)a) * (double)b;
-            PyFPE_END_PROTECT(result)
-            return PyFloat_FromDouble(result);
-    }
-    return (inplace ? PyNumber_InPlaceMultiply : PyNumber_Multiply)(op1, op2);
 }
 #endif
 

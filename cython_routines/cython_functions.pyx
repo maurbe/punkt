@@ -143,7 +143,7 @@ def anisotropic_kernel_deposition_2d(
 		# they are the same in every frame!
 		hmat_eigvecs_norm = hmat_eigvecs[n]
 		hmat_eigvals_norm = _divide_vector_nd_by_scalar(hmat_eigvals[n], cellSize)
-		krs				  = _extract_max_value_1d(hmat_eigvals_norm) * 2
+		krs				  = _extract_max_value_1d(hmat_eigvals_norm) * 3 # 2 kernel has compact support until 3h!
 
 		xpos = pos[n, 0] / cellSize
 		ypos = pos[n, 1] / cellSize
@@ -233,7 +233,7 @@ def anisotropic_kernel_deposition_3d(
 		# they are the same in every frame!
 		hmat_eigvecs_norm = hmat_eigvecs[n]
 		hmat_eigvals_norm = _divide_vector_nd_by_scalar(hmat_eigvals[n], cellSize)
-		krs				  = _extract_max_value_1d(hmat_eigvals_norm) * 2
+		krs				  = _extract_max_value_1d(hmat_eigvals_norm) * 3 # 2 kernel has compact support until 3h!
 
 		xpos = pos[n, 0] / cellSize
 		ypos = pos[n, 1] / cellSize
@@ -357,7 +357,7 @@ def isotropic_kernel_deposition_2d(
 
 		# normalize length scales
 		hsn  = hsm[n] / cellSize
-		krs  = 2 * hsn
+		krs  = hsn * 3 # 2 kernel has compact support until 3h!
 
 		xpos = pos[n, 0] / cellSize
 		ypos = pos[n, 1] / cellSize
@@ -441,7 +441,7 @@ def isotropic_kernel_deposition_3d(
 
 		# normalize length scales
 		hsn  = hsm[n] / cellSize
-		krs  = 2 * hsn
+		krs  = hsn * 3 # 2 kernel has compact support until 3h!
 
 		xpos = pos[n, 0] / cellSize
 		ypos = pos[n, 1] / cellSize

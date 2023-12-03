@@ -56,7 +56,7 @@ def cic_deposition(positions,
 	# divide averaged fields by weight
 	for i in range(len(averaged)):
 		if averaged[i] == True:
-			fields[..., i] /= (weights + 1e-8)
+			fields[..., i] /= (weights + 1e-10)
 
 	return fields, weights
 
@@ -82,6 +82,7 @@ def isotropic_kernel_deposition(positions,
 	hsm        = hsm.astype('float32')
 	quantities = quantities.astype('float32')
 	extent 	   = extent.astype('float32')
+	gridnum	   = int(gridnum)
 
 	deposition_strategy = isotropic_kernel_deposition_2d if dim==2 else isotropic_kernel_deposition_3d
 	fields, weights = deposition_strategy(positions,
@@ -94,7 +95,7 @@ def isotropic_kernel_deposition(positions,
 	# divide averaged fields by weight
 	for i in range(len(averaged)):
 		if averaged[i] == True:
-			fields[..., i] /= (weights + 1e-8)
+			fields[..., i] /= (weights + 1e-10)
 
 	return fields, weights
 
@@ -153,6 +154,7 @@ def anisotropic_kernel_deposition(positions,
 	extent 	   = extent.astype('float32')
 	evals	   = evals.astype('float32')
 	evecs	   = evecs.astype('float32')
+	gridnum	   = int(gridnum)
 
 	# cache it, for some reason the cython functions change the evals and evecs
 	if return_evals:
@@ -171,7 +173,7 @@ def anisotropic_kernel_deposition(positions,
 	# divide averaged fields by weight
 	for i in range(len(averaged)):
 		if averaged[i] == True:
-			fields[..., i] /= (weights + 1e-8)
+			fields[..., i] /= (weights + 1e-10)
 
 	return (fields, weights, evals_copy, evecs_copy) if return_evals else (fields, weights)
 
