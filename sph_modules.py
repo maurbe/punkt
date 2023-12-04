@@ -61,6 +61,19 @@ class sph_interpolator():
 		return A_i
 
 
+def compute_vsm(pos, vel, nn_inds):
+    """
+    pos:           particle positions
+    vel:           particle velocities
+    nn_inds:       list of particle neighbors
+    returns:       computes the velocity dispersion
+    """
+    vel_nn = vel[nn_inds]
+    vel_nn = np.concatenate([vel_nn, vel[:, np.newaxis]], axis=1).mean(axis=1) # attach the particle vel itself
+    vsm = vel - vel_nn
+    return vsm
+
+
 def compute_hsm(pos, nn, boxsize):
 	"""
 	pos:           particle positions
