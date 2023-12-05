@@ -19,14 +19,7 @@ class sph_interpolator():
 		# compute relevant quantities for particles
 		print(f'Init: \t computing {dim}d hsm and ρ')
 		self.hsm, nn_dists, nn_inds, self.tree = compute_hsm(particle_positions, self.nn, boxsize)
-		self.rho = self._compute_density(dim=dim, hsm=self.hsm, nn_dists=nn_dists, nn_inds=nn_inds)		
-
-	
-	def _compute_density(self, dim, hsm, nn_dists, nn_inds):
-		
-		w_ij = quintic_spline(dim, hsm, nn_dists)
-		ρ_i  = np.sum( self.pmasses[nn_inds] * w_ij , axis=1)
-		return ρ_i
+		self.rho = compute_density(dim=dim, hsm=self.hsm, masses=self.pmasses, nn_dists=nn_dists, nn_inds=nn_inds)		
 	
 	
 	def query_field_at_positions(self, 
@@ -61,19 +54,6 @@ class sph_interpolator():
 		return A_i
 
 
-def compute_vsm(pos, vel, nn_inds):
-    """
-    pos:           particle positions
-    vel:           particle velocities
-    nn_inds:       list of particle neighbors
-    returns:       computes the velocity dispersion
-    """
-    vel_nn = vel[nn_inds]
-    vel_nn = np.concatenate([vel_nn, vel[:, np.newaxis]], axis=1).mean(axis=1) # attach the particle vel itself
-    vsm = vel - vel_nn
-    return vsm
-
-
 def compute_hsm(pos, nn, boxsize):
 	"""
 	pos:           particle positions
@@ -84,13 +64,10 @@ def compute_hsm(pos, nn, boxsize):
 	
 	# k+1 -> do not consider particle itself
 	tree = cKDTree(pos, boxsize=boxsize)
-	nn_dists, nn_inds = tree.query(pos, k=nn+1)
+	nn_dists, nn_inds = tree.query(pos, k=nn)
 
-	# Note: particle itself is really not used when computing its density
-	hsm       = nn_dists[:, -1] * 0.5
-	nn_dists  = nn_dists[:, 1:]
-	nn_inds   = nn_inds[:, 1:]
-	
+	# compute hsm
+	hsm = nn_dists[:, -1] * 0.5
 	return hsm, nn_dists, nn_inds, tree
 
 
@@ -110,7 +87,7 @@ def compute_hsm_tensor(pos, masses, NN, boxsize):
 	outer = outer * neighbor_masses[..., np.newaxis, np.newaxis]
 	Sigma = np.sum(outer, axis=1) / np.sum(neighbor_masses, axis=1)[..., np.newaxis, np.newaxis]
 
-	# eigenvectors are returned normalized
+	# eigvecs are returned normalized
 	# eigvecs are the same for H
 	# eigvals are the sqrt of the ones of Sigma
 	eigvals, eigvecs = np.linalg.eigh(Sigma)
@@ -123,13 +100,53 @@ def compute_hsm_tensor(pos, masses, NN, boxsize):
 	return H, eigvals, eigvecs
 
 
-def quintic_spline(dim, h, r_ij):
+def compute_div(masses, rho, A, nn_inds, grad_w):
+	
+	# need to ignore particle itself for gradient computation
+	nn_inds = nn_inds[:, 1:]
+	A_j = A[nn_inds]
+	
+	div_A  = 1 / rho[:, np.newaxis] * np.sum( masses[nn_inds][..., np.newaxis] * (A_j[..., np.newaxis] - A[:, np.newaxis, np.newaxis]) * grad_w, axis=1)
+	return div_A
+
+
+def compute_rot(masses, rho, A, nn_inds, grad_w):
+	
+	# need to ignore particle itself for gradient computation
+	nn_inds = nn_inds[:, 1:]
+	A_j = A[nn_inds]
+	
+	rot_A  = 1 / rho[:, np.newaxis] * np.sum( masses[nn_inds][..., np.newaxis] * np.cross(A_j - A[:, np.newaxis], grad_w), axis=1)
+	return rot_A
+
+
+def compute_density(dim, hsm, masses, nn_dists, nn_inds):
 	"""
-	h:             smoothing lengths
-	q:             abs(relative coords)
+	dim:           how many spatial dims
+	hsm:           particle smoothing lengths
+	masses:		   particle masses
+	nn_dists:	   distances to neigbors
+	nn_inds:       list of particle neighbors
+	returns:       computes the density at particle positions
 	"""
-	if len(h.shape)==1:
-		h = h[:, np.newaxis]
+	w_ij = quintic_spline(dim, hsm, nn_dists)
+	ρ_i  = np.sum( masses[nn_inds] * w_ij , axis=1)
+	return ρ_i
+
+
+def compute_vsm(vel, nn_inds):
+	"""
+	vel:           particle velocities
+	nn_inds:       list of particle neighbors
+	returns:       computes the velocity dispersion vector
+	"""
+	vel_nn = vel[nn_inds]
+	#vel_nn = np.concatenate([vel_nn, vel[:, np.newaxis]], axis=1).mean(axis=1) # attach the particle vel itself
+	vsm = vel - vel_nn.mean(axis=1)
+	return vsm
+
+
+def σ5(dim, h):
 
 	if dim == 1:
 		sigma = 1.0 / (120 * h)
@@ -137,6 +154,19 @@ def quintic_spline(dim, h, r_ij):
 		sigma = 7.0 / (478 * math.pi * h ** 2)
 	elif dim == 3:
 		sigma = 1.0 / (120 * math.pi * h ** 3)
+
+	return sigma
+	
+
+def quintic_spline(dim, h, r_ij):
+	"""
+	dim:		   spatial dim
+	h:             smoothing lengths
+	q:             abs(relative coords)
+	"""
+	if len(h.shape)==1:
+		h = h[:, np.newaxis]
+	sigma = σ5(dim, h)
 
 	q = r_ij / h
 	term = np.zeros_like(q)
@@ -147,7 +177,46 @@ def quintic_spline(dim, h, r_ij):
 	W = sigma * term
 	return W
 
+
+def quintic_spline_gradient(dim, pos, h, nn_inds):
+	"""
+	dim:           spatial dim
+	pos:   	       particle positions
+	h:             smoothing lengths
+	nn_inds:       indices of neighbors
+	"""
+	# need to ignore particle itself in the gradient computation (would give division by 0 error)
+	nn_inds = nn_inds[:, 1:]
 	
+	# prepare normalizations
+	if len(h.shape)==1:
+		h = h[:, np.newaxis]
+	sigma = σ5(dim, h)
+	
+	r_ij_vec = pos[nn_inds] - pos[:, np.newaxis, :] # this holds un-normalized vector differences!
+	r_ij_mag = np.linalg.norm(r_ij_vec, axis=-1)
+
+	er = r_ij_vec / r_ij_mag[..., np.newaxis]
+	q = r_ij_mag / h
+
+	dwdq = np.zeros_like(q)
+	dwdq = np.where(np.logical_and(0<=q, q<=1), -5 * (3-q)**4 + 5*6*(2-q)**4 - 5*15*(1-q)**4, dwdq)
+	dwdq = np.where(np.logical_and(1< q, q<=2), -5 * (3-q)**4 + 5*6*(2-q)**4, dwdq)
+	dwdq = np.where(np.logical_and(2< q, q<=3), -5 * (3-q)**4, dwdq)
+	dwdr = sigma / h * dwdq
+	
+	dwdx = dwdr * er[..., 0]
+	dwdy = dwdr * er[..., 1]
+	if dim == 3:
+		dwdz = dwdr * er[..., 2]
+		grad = np.stack([dwdx, dwdy, dwdz], axis=-1)
+
+	elif dim == 2:
+		grad = np.stack([dwdx, dwdy], axis=-1)
+
+	return grad
+
+
 def create_grid_1d(nx, boxsize):
 
 	Δx = boxsize / nx
