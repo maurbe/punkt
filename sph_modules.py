@@ -1,6 +1,6 @@
 import math
 import numpy as np
-from scipy.spatial import cKDTree
+from scipy.spatial import KDTree, cKDTree
 
 
 class sph_interpolator():
@@ -54,16 +54,20 @@ class sph_interpolator():
 		return A_i
 
 
-def compute_hsm(pos, nn, boxsize):
+def compute_hsm(pos, nn, boxsize=None):
 	"""
-	pos:           particle positions
-	nrn:           number of neighbors to consider
-	returns:       computes the smoothing length for each 
-				   particle as 0.5 * distance to Nth nn.
+	pos:           	particle positions
+	nn:            	number of neighbors to consider
+	boxsize:		if specified, use periodic kdtree, else non-periodic
+	returns:       	computes the smoothing length for each 
+				   	particle as 0.5 * distance to Nth nn.
 	"""
 	
 	# k+1 -> do not consider particle itself
-	tree = cKDTree(pos, boxsize=boxsize)
+	if boxsize is None:
+		tree = kKDTree(pos)	
+	else:
+		tree = cKDTree(pos, boxsize=boxsize)
 	nn_dists, nn_inds = tree.query(pos, k=nn)
 
 	# compute hsm
