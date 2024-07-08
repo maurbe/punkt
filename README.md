@@ -1,4 +1,4 @@
-# pgpy
+# punkt
  Particle-grid routines using sph. Illustrative examples can be found in the `documentation` folder.\
  The package offers three key contributions: 
  
