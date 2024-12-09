@@ -6,8 +6,6 @@ import scipy.spatial as spatial
 from cython_routines.cython_functions import *
 
 
-# -
-
 def cic_deposition(positions,
 				   quantities,
 				   averaged,
@@ -438,7 +436,7 @@ def create_grid_3d(nx, ny, nz, boxsize):
 	grid_positions = np.stack((xx.ravel(), 
 							   yy.ravel(), 
 							   zz.ravel()), 
-							  axis=-1)
+							  axis=-1).astype('float32')
 	return grid_positions
 
 
