@@ -4,6 +4,8 @@ import tqdm
 cimport numpy as np
 cimport cython
 
+#def initialize():
+#	np.import_array()
 
 @cython.boundscheck(False)
 @cython.wraparound(False)
