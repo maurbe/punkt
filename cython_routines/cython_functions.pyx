@@ -1,47 +1,75 @@
+# cython: boundscheck=False
+# cython: wraparound=False
+# cython: language_level=3
 from __future__ import print_function
 import numpy as np
 import tqdm
 cimport numpy as np
 cimport cython
 
-#def initialize():
-#	np.import_array()
 
-@cython.boundscheck(False)
-@cython.wraparound(False)
-def _account_for_pbc(int a, int gridnum, int periodic):
-	cdef int an = a
-	cdef float fraction = -1.0
-		
+cdef inline float _sigma(int dim, float h):
+	
+	if dim == 1:
+		return 1.0 / (120 * h)
+	elif dim == 2:
+		return 7.0 / (478 * 3.141592653589793 * h ** 2)
+	elif dim == 3:
+		return 1.0 / (120 * 3.141592653589793 * h ** 3)
+
+
+cdef inline float _quintic_spline(float q):
+
+	if 0.0 <= q <= 1.0:
+		return (3 - q)**5 - 6*(2 - q)**5 + 15*(1 - q)**5
+	elif 1.0 < q <= 2.0:
+		return (3 - q)**5 - 6*(2 - q)**5
+	elif 2.0 < q <= 3.0:
+		return (3 - q)**5
+	else:
+		return 0.0
+
+
+cdef inline int _account_for_pbc(int a, int gridnum):
+	
+	cdef int an = a	
 	if (a < 0):
 		an = a + gridnum   # e.g. 127 = -1 + 128
-		if periodic == 0: # if not periodic, dont deposit into this (otherwise wrapped) cell
-			fraction = 0.0
 
 	elif (a >= gridnum):
 		an = a - gridnum  # e.g. 0 = 128 - 128
-		if periodic == 0:
-			fraction = 0.0
 		
-	return an, fraction
+	return an
 
 
-@cython.boundscheck(False)
-@cython.wraparound(False)
-def _divide_vector_nd_by_scalar(np.ndarray[np.float32_t, ndim=1] vec, np.float32_t scalar):
+cdef inline np.float64_t fmin(np.float64_t f0, np.float64_t f1) nogil:
+	if f0 < f1: return f0
+	return f1
 
-	cdef int rows = vec.shape[0]
-	cdef int i
-	
+
+cdef inline np.float64_t fmax(np.float64_t f0, np.float64_t f1) nogil:
+	if f0 > f1: return f0
+	return f1
+
+
+cdef inline float _extract_max_value_1d(float[:] arr) nogil:
+	cdef int i, size = arr.shape[0]
+	cdef float max_val = arr[0]
+
+	for i in range(1, size):  # Start from 1 since arr[0] already assigned
+		if arr[i] > max_val:
+			max_val = arr[i]
+
+	return max_val
+
+
+cdef inline void _divide_vector_nd_by_scalar(float[:] vec, float scalar) noexcept nogil:
+	cdef int i, rows = vec.shape[0]
 	for i in range(rows):
 		vec[i] /= scalar
-	
-	return vec
 
 
 """
-@cython.boundscheck(False)
-@cython.wraparound(False)
 def _divide_matrix_2d_by_scalar(np.ndarray[np.float32_t, ndim=2] mat, np.float32_t scalar):
 
 	cdef int rows = mat.shape[0]
@@ -55,8 +83,6 @@ def _divide_matrix_2d_by_scalar(np.ndarray[np.float32_t, ndim=2] mat, np.float32
 	return mat
 
 
-@cython.boundscheck(False)
-@cython.wraparound(False)
 def _multiply_matrix_2d_by_scalar(np.ndarray[np.float32_t, ndim=2] mat, np.float32_t scalar):
 
 	cdef int rows = mat.shape[0]
@@ -70,8 +96,6 @@ def _multiply_matrix_2d_by_scalar(np.ndarray[np.float32_t, ndim=2] mat, np.float
 	return mat
 
 
-@cython.boundscheck(False)
-@cython.wraparound(False)
 def _matrix_vector_multiply(np.ndarray[np.float32_t, ndim=2] matrix, np.ndarray[np.float32_t, ndim=1] vector):
 
 	cdef np.ndarray[np.float32_t, ndim=1, mode='c'] result = np.zeros(2, dtype=np.float32)
@@ -80,9 +104,6 @@ def _matrix_vector_multiply(np.ndarray[np.float32_t, ndim=2] matrix, np.ndarray[
 
 	return result
 
-
-@cython.boundscheck(False)
-@cython.wraparound(False)
 def _vector_norm(np.ndarray[np.float32_t, ndim=1] arr):
 
 	cdef np.float32_t norm_sq = 0.0
@@ -95,25 +116,6 @@ def _vector_norm(np.ndarray[np.float32_t, ndim=1] arr):
 	return norm_sq ** 0.5
 """
 
-
-
-@cython.boundscheck(False)
-@cython.wraparound(False)
-def _extract_max_value_1d(np.ndarray[np.float32_t, ndim=1] arr):
-
-	cdef int size = arr.shape[0]
-	cdef int i
-	cdef np.float32_t max_val = arr[0]
-	
-	for i in range(size):
-		if arr[i] > max_val:
-			max_val = arr[i]
-	
-	return max_val
-
-
-@cython.boundscheck(False)
-@cython.wraparound(False)
 def anisotropic_kernel_deposition_2d(
 		  np.ndarray[np.float32_t, ndim=2] pos,
 		  np.ndarray[np.float32_t, ndim=3] hmat_eigvecs,
@@ -144,7 +146,9 @@ def anisotropic_kernel_deposition_2d(
 		# the eigvals need to be scaled but NOT the normalized unit vectors!!
 		# they are the same in every frame!
 		hmat_eigvecs_norm = hmat_eigvecs[n]
-		hmat_eigvals_norm = _divide_vector_nd_by_scalar(hmat_eigvals[n], cellSize)
+
+		hmat_eigvals_norm = hmat_eigvals[n]
+		_divide_vector_nd_by_scalar(hmat_eigvals_norm, cellSize)
 		krs				  = _extract_max_value_1d(hmat_eigvals_norm) * 3 # 2 kernel has compact support until 3h!
 
 		xpos = pos[n, 0] / cellSize
@@ -174,8 +178,8 @@ def anisotropic_kernel_deposition_2d(
 				else:
 					# approximate the integral with the area of the cell * kernel(midpoint)
 					# account for pbc
-					an, fraction = _account_for_pbc(a, gridnum, periodic)
-					bn, fraction = _account_for_pbc(b, gridnum, periodic)
+					an = _account_for_pbc(a, gridnum)
+					bn = _account_for_pbc(b, gridnum)
 
 					# distance to midpoint of cell
 					dist_x = (xpos - (<np.float32_t> a + 0.5))
@@ -192,7 +196,8 @@ def anisotropic_kernel_deposition_2d(
 					q = (xi_1 ** 2 + xi_2 ** 2) ** 0.5
 
 					detH = hmat_eigvals_norm[0] * hmat_eigvals_norm[1]
-					fraction = _quintic_spline(q) * 7.0 / (478 * 3.141592653589793 * detH) # * 1.0 * 1.0
+					sigma = _sigma(dim=2, h=detH)
+					fraction = _quintic_spline(q) * sigma
 				
 				# deposit multiple fields
 				for f in range(num_fields):
@@ -202,8 +207,6 @@ def anisotropic_kernel_deposition_2d(
 	return fields, weights
 
 
-@cython.boundscheck(False)
-@cython.wraparound(False)
 def anisotropic_kernel_deposition_3d(
 		  np.ndarray[np.float32_t, ndim=2] pos,
 		  np.ndarray[np.float32_t, ndim=3] hmat_eigvecs,
@@ -234,7 +237,9 @@ def anisotropic_kernel_deposition_3d(
 		# the eigvals need to be scaled but NOT the normalized unit vectors!!
 		# they are the same in every frame!
 		hmat_eigvecs_norm = hmat_eigvecs[n]
-		hmat_eigvals_norm = _divide_vector_nd_by_scalar(hmat_eigvals[n], cellSize)
+
+		hmat_eigvals_norm = hmat_eigvals[n]
+		_divide_vector_nd_by_scalar(hmat_eigvals[n], cellSize)
 		krs				  = _extract_max_value_1d(hmat_eigvals_norm) * 3 # 2 kernel has compact support until 3h!
 
 		xpos = pos[n, 0] / cellSize
@@ -270,9 +275,9 @@ def anisotropic_kernel_deposition_3d(
 					else:
 						# approximate the integral with the area of the cell * kernel(midpoint)
 						# account for pbc
-						an, fraction = _account_for_pbc(a, gridnum, periodic)
-						bn, fraction = _account_for_pbc(b, gridnum, periodic)
-						cn, fraction = _account_for_pbc(c, gridnum, periodic)
+						an = _account_for_pbc(a, gridnum)
+						bn = _account_for_pbc(b, gridnum)
+						cn = _account_for_pbc(c, gridnum)
 
 						# distance to midpoint of cell
 						dist_x = (xpos - (<np.float32_t> a + 0.5))
@@ -293,7 +298,8 @@ def anisotropic_kernel_deposition_3d(
 						q = (xi_1 ** 2 + xi_2 ** 2 + xi_3 ** 2) ** 0.5
 
 						detH = hmat_eigvals_norm[0] * hmat_eigvals_norm[1] * hmat_eigvals_norm[2]
-						fraction = _quintic_spline(q) / (120 * 3.141592653589793 * detH) # * 1.0 * 1.0 * 1.0
+						sigma = _sigma(dim=3, h=detH)
+						fraction = _quintic_spline(q) * sigma
 					
 					# deposit multiple fields
 					for f in range(num_fields):
@@ -303,37 +309,6 @@ def anisotropic_kernel_deposition_3d(
 	return fields, weights
 
 
-@cython.boundscheck(False)
-@cython.wraparound(False)
-def _sigma(int dim, float h):
-	cdef float sigma_value = 0.0
-	
-	if dim == 1:
-		sigma_value = 1.0 / (120 * h)
-	elif dim == 2:
-		sigma_value = 7.0 / (478 * 3.141592653589793 * h ** 2)
-	elif dim == 3:
-		sigma_value = 1.0 / (120 * 3.141592653589793 * h ** 3)
-	
-	return sigma_value
-
-
-@cython.boundscheck(False)
-@cython.wraparound(False)
-def _quintic_spline(np.float32_t q):
-
-	if 0.0 <= q <= 1.0:
-		return (3 - q)**5 - 6*(2 - q)**5 + 15*(1 - q)**5
-	elif 1.0 < q <= 2.0:
-		return (3 - q)**5 - 6*(2 - q)**5
-	elif 2.0 < q <= 3.0:
-		return (3 - q)**5
-	else:
-		return 0.0
-
-
-@cython.boundscheck(False)
-@cython.wraparound(False)
 def isotropic_kernel_deposition_2d(
 		  np.ndarray[np.float32_t, ndim=2] pos,
 		  np.ndarray[np.float32_t, ndim=1] hsm,
@@ -359,7 +334,7 @@ def isotropic_kernel_deposition_2d(
 
 		# normalize length scales
 		hsn  = hsm[n] / cellSize
-		krs  = hsn * 3 # 2 kernel has compact support until 3h!
+		krs  = hsn * 2 # 2 kernel has compact support until 3h!
 
 		xpos = pos[n, 0] / cellSize
 		ypos = pos[n, 1] / cellSize
@@ -389,8 +364,8 @@ def isotropic_kernel_deposition_2d(
 				else:
 					# approximate the integral with the area of the cell * kernel(midpoint)
 					# account for pbc
-					an, fraction = _account_for_pbc(a, gridnum, periodic)
-					bn, fraction = _account_for_pbc(b, gridnum, periodic)
+					an = _account_for_pbc(a, gridnum)
+					bn = _account_for_pbc(b, gridnum)
 
 					# distance to midpoint of cell
 					dist_x = (xpos - (<np.float32_t> a + 0.5))
@@ -406,7 +381,7 @@ def isotropic_kernel_deposition_2d(
 					q = r / hsn
 
 					# kernel * area (= cellSize^2 = 1^2) = volume = fraction
-					fraction = _quintic_spline(q) * _sigma(dim=2, h=hsn) # * 1.0 * 1.0
+					fraction = _quintic_spline(q) * _sigma(dim=2, h=hsn)
 				
 				# deposit multiple fields
 				for f in range(num_fields):
@@ -416,8 +391,6 @@ def isotropic_kernel_deposition_2d(
 	return fields, weights
 
 
-@cython.boundscheck(False)
-@cython.wraparound(False)
 def isotropic_kernel_deposition_3d(
 		  np.ndarray[np.float32_t, ndim=2] pos,
 		  np.ndarray[np.float32_t, ndim=1] hsm,
@@ -443,7 +416,7 @@ def isotropic_kernel_deposition_3d(
 
 		# normalize length scales
 		hsn  = hsm[n] / cellSize
-		krs  = hsn * 3 # 2 kernel has compact support until 3h!
+		krs  = hsn * 2 # 2 kernel has compact support until 2h!
 
 		xpos = pos[n, 0] / cellSize
 		ypos = pos[n, 1] / cellSize
@@ -479,9 +452,9 @@ def isotropic_kernel_deposition_3d(
 					else:
 						# approximate the integral with the area of the cell * kernel(midpoint)
 						# account for pbc
-						an, fraction = _account_for_pbc(a, gridnum, periodic)
-						bn, fraction = _account_for_pbc(b, gridnum, periodic)
-						cn, fraction = _account_for_pbc(c, gridnum, periodic)
+						an = _account_for_pbc(a, gridnum)
+						bn = _account_for_pbc(b, gridnum)
+						cn = _account_for_pbc(c, gridnum)
 
 						# distance to midpoint of cell
 						dist_x = (xpos - (<np.float32_t> a + 0.5))
@@ -510,8 +483,6 @@ def isotropic_kernel_deposition_3d(
 	return fields, weights
 
 
-@cython.boundscheck(False)
-@cython.wraparound(False)
 def cic_2d(np.ndarray[np.float32_t, ndim=2] pos,
 		   np.ndarray[np.float32_t, ndim=2] quantities,
 		   np.ndarray[np.float32_t, ndim=1] extent,
@@ -595,8 +566,6 @@ def cic_2d(np.ndarray[np.float32_t, ndim=2] pos,
 	return fields, weights
 	
 
-@cython.boundscheck(False)
-@cython.wraparound(False)
 def cic_3d(np.ndarray[np.float32_t, ndim=2] pos,
 		   np.ndarray[np.float32_t, ndim=2] quantities,
 		   np.ndarray[np.float32_t, ndim=1] extent,
@@ -704,16 +673,9 @@ def cic_3d(np.ndarray[np.float32_t, ndim=2] pos,
 
 
 
-cdef inline np.float64_t fmin(np.float64_t f0, np.float64_t f1) nogil:
-	if f0 < f1: return f0
-	return f1
-cdef inline np.float64_t fmax(np.float64_t f0, np.float64_t f1) nogil:
-	if f0 > f1: return f0
-	return f1
 
 
-@cython.boundscheck(False)
-@cython.wraparound(False)
+
 def cic_2d_adaptive(np.ndarray[np.float32_t, ndim=2] pos,
 					np.ndarray[np.float32_t, ndim=2] quantities,
 					np.ndarray[np.float32_t, ndim=1] pcellsizesHalf,
@@ -804,8 +766,6 @@ def cic_2d_adaptive(np.ndarray[np.float32_t, ndim=2] pos,
 	return fields, weights
 
 
-@cython.boundscheck(False)
-@cython.wraparound(False)
 def cic_3d_adaptive(np.ndarray[np.float32_t, ndim=2] pos,
 					np.ndarray[np.float32_t, ndim=2] quantities,
 					np.ndarray[np.float32_t, ndim=1] pcellsizesHalf,

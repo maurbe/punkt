@@ -2,9 +2,7 @@
 import math
 import numpy as np
 import scipy.spatial as spatial
-
 from cython_routines.cython_functions import *
-#cython_functions.initialize()
 
 
 def cic_deposition(positions,
@@ -65,7 +63,6 @@ def cic_deposition(positions,
 	return fields, weights
 
 
-
 def isotropic_kernel_deposition(positions,
 								hsm,
 								quantities,
@@ -102,7 +99,6 @@ def isotropic_kernel_deposition(positions,
 			fields[..., i] /= (weights + 1e-10)
 
 	return fields, weights
-
 
 
 def anisotropic_kernel_deposition(positions,
@@ -182,7 +178,6 @@ def anisotropic_kernel_deposition(positions,
 	return (fields, weights, evals_copy, evecs_copy) if return_evals else (fields, weights)
 
 
-# +
 class sph_interpolator():
 	
 	def __init__(self,
