@@ -322,7 +322,7 @@ def isotropic_kernel_deposition_2d(
 	cdef int num_left, num_bottom, num_right, num_top, num_fields
 	cdef np.float32_t xpos, ypos
 	cdef np.float32_t krs, cellSize, boxsize, fraction
-	cdef np.float32_t q, r
+	cdef np.float32_t q, r, sig
 
 	num_fields = quantities.shape[1]
 	cdef np.ndarray[np.float32_t, ndim=3, mode='c'] fields  = np.zeros((gridnum, gridnum, num_fields), dtype=np.float32)
@@ -335,6 +335,7 @@ def isotropic_kernel_deposition_2d(
 		# normalize length scales
 		hsn  = hsm[n] / cellSize
 		krs  = hsn * 2 # 2 kernel has compact support until 3h!
+		sig  = _sigma(dim=2, h=hsn)
 
 		xpos = pos[n, 0] / cellSize
 		ypos = pos[n, 1] / cellSize
@@ -356,33 +357,33 @@ def isotropic_kernel_deposition_2d(
 
 				# here we can check whether the kernel is completely inside the mother cell
 				# if, yes the fraction is just 1.0
-				if (num_left == 0) & (num_bottom == 0) & (num_right == 0) & (num_top == 0):
-					fraction = 1.0
-					an = a
-					bn = b
+				#if (num_left == 0) & (num_bottom == 0) & (num_right == 0) & (num_top == 0):
+				#	fraction = 1.0
+				#	an = a
+				#	bn = b
 
-				else:
-					# approximate the integral with the area of the cell * kernel(midpoint)
-					# account for pbc
-					an = _account_for_pbc(a, gridnum)
-					bn = _account_for_pbc(b, gridnum)
+				#else:
+				# approximate the integral with the area of the cell * kernel(midpoint)
+				# account for pbc
+				an = _account_for_pbc(a, gridnum)
+				bn = _account_for_pbc(b, gridnum)
 
-					# distance to midpoint of cell
-					dist_x = (xpos - (<np.float32_t> a + 0.5))
-					dist_y = (ypos - (<np.float32_t> b + 0.5))
+				# distance to midpoint of cell
+				dist_x = (xpos - (<np.float32_t> a + 0.5))
+				dist_y = (ypos - (<np.float32_t> b + 0.5))
 
-					if periodic:
-						if dist_x > boxsize / 2.0:
-							dist_x -= boxsize
-						if dist_y > boxsize / 2.0:
-							dist_y -= boxsize
+				if periodic:
+					if dist_x > boxsize / 2.0:
+						dist_x -= boxsize
+					if dist_y > boxsize / 2.0:
+						dist_y -= boxsize
 
-					r = (dist_x ** 2 + dist_y ** 2) ** 0.5
-					q = r / hsn
+				r = (dist_x ** 2 + dist_y ** 2) ** 0.5
+				q = r / hsn
 
-					# kernel * area (= cellSize^2 = 1^2) = volume = fraction
-					fraction = _quintic_spline(q) * _sigma(dim=2, h=hsn)
-				
+				# kernel * area (= cellSize^2 = 1^2) = volume = fraction
+				fraction = _quintic_spline(q) * sig
+			
 				# deposit multiple fields
 				for f in range(num_fields):
 					fields[an, bn, f] += fraction * quantities[n, f]
@@ -404,7 +405,7 @@ def isotropic_kernel_deposition_3d(
 	cdef int num_left, num_bottom, num_right, num_top, num_front, num_back, num_fields
 	cdef np.float32_t xpos, ypos, zpos
 	cdef np.float32_t krs, cellSize, boxsize, fraction
-	cdef np.float32_t q, r
+	cdef np.float32_t q, r, sig
 
 	num_fields = quantities.shape[1]
 	cdef np.ndarray[np.float32_t, ndim=4, mode='c'] fields  = np.zeros((gridnum, gridnum, gridnum, num_fields), dtype=np.float32)
@@ -416,7 +417,8 @@ def isotropic_kernel_deposition_3d(
 
 		# normalize length scales
 		hsn  = hsm[n] / cellSize
-		krs  = hsn * 2 # 2 kernel has compact support until 2h!
+		krs  = hsn * 2 # kernel has compact support until 2h!
+		sig = _sigma(3, hsn)
 
 		xpos = pos[n, 0] / cellSize
 		ypos = pos[n, 1] / cellSize
@@ -443,38 +445,38 @@ def isotropic_kernel_deposition_3d(
 
 					# here we can check whether the kernel is completely inside the mother cell
 					# if, yes the fraction is just 1.0
-					if (num_left == 0) & (num_bottom == 0) & (num_right == 0) & (num_top == 0) & (num_front == 0) & (num_back == 0):
-						fraction = 1.0
-						an = a
-						bn = b
-						cn = c
+					#if (num_left == 0) & (num_bottom == 0) & (num_right == 0) & (num_top == 0) & (num_front == 0) & (num_back == 0):
+					#	fraction = 1.0
+					#	an = a
+					#	bn = b
+					#	cn = c
 
-					else:
-						# approximate the integral with the area of the cell * kernel(midpoint)
-						# account for pbc
-						an = _account_for_pbc(a, gridnum)
-						bn = _account_for_pbc(b, gridnum)
-						cn = _account_for_pbc(c, gridnum)
+					#else:
+					# approximate the integral with the area of the cell * kernel(midpoint)
+					# account for pbc
+					an = _account_for_pbc(a, gridnum)
+					bn = _account_for_pbc(b, gridnum)
+					cn = _account_for_pbc(c, gridnum)
 
-						# distance to midpoint of cell
-						dist_x = (xpos - (<np.float32_t> a + 0.5))
-						dist_y = (ypos - (<np.float32_t> b + 0.5))
-						dist_z = (zpos - (<np.float32_t> c + 0.5))
+					# distance to midpoint of cell
+					dist_x = (xpos - (<np.float32_t> a + 0.5))
+					dist_y = (ypos - (<np.float32_t> b + 0.5))
+					dist_z = (zpos - (<np.float32_t> c + 0.5))
 
-						if periodic:
-							if dist_x > boxsize / 2.0:
-								dist_x -= boxsize
-							if dist_y > boxsize / 2.0:
-								dist_y -= boxsize
-							if dist_z > boxsize / 2.0:
-								dist_z -= boxsize
+					if periodic:
+						if dist_x > boxsize / 2.0:
+							dist_x -= boxsize
+						if dist_y > boxsize / 2.0:
+							dist_y -= boxsize
+						if dist_z > boxsize / 2.0:
+							dist_z -= boxsize
 
-						r = (dist_x ** 2 + dist_y ** 2 + dist_z ** 2) ** 0.5
-						q = r / hsn
+					r = (dist_x ** 2 + dist_y ** 2 + dist_z ** 2) ** 0.5
+					q = r / hsn
 
-						# kernel * area (= cellSize^3 = 1^3) = volume = fraction
-						fraction = _quintic_spline(q) * _sigma(dim=3, h=hsn) # * 1.0 * 1.0 * 1.0
-					
+					# kernel * area (= cellSize^3 = 1^3) = volume = fraction
+					fraction = _quintic_spline(q) * sig
+				
 					# deposit multiple fields
 					for f in range(num_fields):
 						fields[an, bn, cn, f] += fraction * quantities[n, f]
